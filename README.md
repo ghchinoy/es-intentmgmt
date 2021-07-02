@@ -40,6 +40,8 @@ $ es-intentmgmt --project ghctest003
 2021/07/02 14:23:23 Training Phrases: 12
 2021/07/02 14:23:23 Getting 'dealer-locator' (projects/ghctest003/locations/global/agent/intents/e964eb8f-591e-42df-8c48-2cffae813d2a) ...
 2021/07/02 14:23:23 Training Phrases: 3
-$ ls *.csv
-Default_Welcome_Intent_en.csv Talk_to_an_agent_en.csv       dealer-locator_en.csv
+$ ls -1a *.csv
+Default_Welcome_Intent_en.csv
+Talk_to_an_agent_en.csv
+dealer-locator_en.csv
 ```
