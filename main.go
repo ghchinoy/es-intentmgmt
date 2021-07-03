@@ -1,4 +1,4 @@
-// Copyright 2010 Google LLC
+// Copyright 2021 Google LLC
 // Author: ghchinoy
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,7 +31,6 @@ import (
 
 var (
 	action       string
-	agentID      string
 	location     string
 	projectID    string
 	languagecode string
@@ -39,7 +38,6 @@ var (
 
 func init() {
 	flag.StringVar(&action, "action", "export", "import | export")
-	flag.StringVar(&agentID, "agent", "", "ES Agent ID")
 	flag.StringVar(&location, "location", "global", "ES Agent location")
 	flag.StringVar(&projectID, "project", "", "GCP Project ID")
 	flag.StringVar(&languagecode, "language", "en", "language code (for multilingual Agents)")
@@ -49,14 +47,16 @@ func init() {
 func main() {
 	log.Println("es intent management")
 
-	if action == "" {
-		log.Println("action flag required")
+	if projectID == "" {
+		log.Println("project flag required")
 		os.Exit(1)
 	}
 
 	switch action {
 	case "import":
 		log.Println("importing intent")
+		log.Println("importing not implemented at this time")
+		os.Exit(0)
 	case "export":
 		log.Println("exporting all intents")
 		err := exportIntents()
@@ -64,8 +64,9 @@ func main() {
 			log.Printf("unable to connect to ES: %v", err)
 			os.Exit(1)
 		}
+		log.Println("export complete")
 	default:
-		log.Println("action flag must be either 'export' or 'import'")
+		log.Println("unrecognized action: action flag must be either 'export' or 'import'")
 		os.Exit(1)
 	}
 }
@@ -73,25 +74,31 @@ func main() {
 // exportIntents exports the Intents from an Agent into individual CSV files
 func exportIntents() error {
 	ctx := context.Background()
+
+	// agent location: global / regionalized
 	var apiEndpoint string
 	if location == "global" {
 		apiEndpoint = "dialogflow.googleapis.com:443"
 	} else {
 		apiEndpoint = fmt.Sprintf("%s-dialogflow.googleapis.com:443", location)
 	}
+	// dialogflow es client
 	c, err := dialogflow.NewIntentsClient(ctx, option.WithEndpoint(apiEndpoint))
 	if err != nil {
 		return err
 	}
 	defer c.Close()
-
+	// agent reference ID
 	parent := fmt.Sprintf("projects/%s/locations/%s/agent", projectID, location)
+	// ES List Intents request
 	req := &dialogflowpb.ListIntentsRequest{
 		Parent:       parent,
 		LanguageCode: languagecode,
-		IntentView:   1,
+		IntentView:   dialogflowpb.IntentView_INTENT_VIEW_FULL, // deep, not shallow
 	}
+	// ES ListIntents
 	it := c.ListIntents(ctx, req)
+	// iterate through results and output
 	for {
 		intent, err := it.Next()
 		if err == iterator.Done {
@@ -100,11 +107,11 @@ func exportIntents() error {
 		if err != nil {
 			return err
 		}
-		if !strings.HasPrefix(intent.DisplayName, "Knowledge.") {
-			log.Printf("Getting '%s' (%s) ...", intent.DisplayName, intent.Name)
+		if !strings.HasPrefix(intent.DisplayName, "Knowledge.") { // ignoring any Knowledge Base intents
+			log.Printf("getting '%s' (%s) ...", intent.DisplayName, intent.Name)
 			tps := intent.GetTrainingPhrases()
 			if len(tps) > 0 {
-				log.Printf("Training Phrases: %d", len(tps))
+				log.Printf("training phrases found: %d", len(tps))
 
 				var records [][]string
 				records = append(records, []string{"language code", "training phrase"})
@@ -131,25 +138,11 @@ func exportIntents() error {
 				if err := w.Error(); err != nil {
 					log.Println("error writing csv:", err)
 				}
+				log.Printf("written to %s", filepath)
 			} else {
-				log.Printf("No training phrases for '%s'", intent.DisplayName)
+				log.Printf("no training phrases for '%s'", intent.DisplayName)
 			}
 		}
-
-		/*
-			jsonbytes, _ := json.MarshalIndent(&intent, "", "  ")
-			fmt.Printf("%s\n", jsonbytes)
-		*/
-
-		/*
-			filepath, count, err := getIntent(ctx, intent.DisplayName, intent.Name)
-			if err != nil {
-				log.Printf("Unable to retrieve intent: %v", err)
-			} else {
-				log.Printf("Wrote %d intents to %s.", count, filepath)
-			}
-		*/
-
 	}
 
 	return nil
