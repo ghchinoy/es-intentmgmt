@@ -5,21 +5,21 @@ Example of using the Dialogflow ES API to export and import Intents for external
 Note: Export is the only functioning command.
 
 ```
+Usage of es-intentmgmt
   -action string
-    	import | export (default "export")
-  -agent string
-    	ES Agent ID
+        import | export (default "export")
   -language string
-    	language code (for multilingual Agents) (default "en")
+        language code (for multilingual Agents) (default "en")
   -location string
-    	ES Agent location (default "global")
+        ES Agent location (default "global")
   -project string
-    	GCP Project ID
+        GCP Project ID
 ```
 
 ## Requirements
 
 * Google service account with Dialogflow API Admin Role as env var `GOOGLE_APPLICATION_CREDENTIALS`
+* `project` flag is required, set to GCP Project ID
 
 For information on how to create and obtain Application Default Credentials, see https://developers.google.com/identity/protocols/application-default-credentials.
 
