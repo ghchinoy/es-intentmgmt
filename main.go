@@ -73,6 +73,8 @@ func main() {
 
 // exportIntents exports the Intents from an Agent into individual CSV files
 func exportIntents() error {
+	var intentcount, phrasecount int
+
 	ctx := context.Background()
 
 	// agent location: global / regionalized
@@ -123,6 +125,7 @@ func exportIntents() error {
 					}
 					phrase := strings.Join(phraseparts, "")
 					records = append(records, []string{languagecode, phrase})
+					phrasecount++
 				}
 
 				filepath := fmt.Sprintf("%s_%s.csv", strings.Replace(intent.DisplayName, " ", "_", -1), languagecode)
@@ -139,11 +142,13 @@ func exportIntents() error {
 					log.Println("error writing csv:", err)
 				}
 				log.Printf("written to %s", filepath)
+				intentcount++
 			} else {
 				log.Printf("no training phrases for '%s'", intent.DisplayName)
 			}
 		}
 	}
+	log.Printf("Intents %d, Training phrases %d", intentcount, phrasecount)
 
 	return nil
 }
